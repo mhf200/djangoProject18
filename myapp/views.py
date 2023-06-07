@@ -1,9 +1,7 @@
 from datetime import datetime, timedelta
-import pytz
-from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Question, Answer, Translation, Choice, Player, Gameplay
+from .models import Question, Answer, Translation, Choice, Player, GameRound, Results, GameSession
 from translate import Translator
 from django.utils import timezone
 
@@ -11,7 +9,6 @@ from django.utils import timezone
 def get_question(request):
     if request.method == 'GET':
         language = request.GET.get('language')
-        time_limit = int(request.GET.get('time_limit', 10))  # Default time limit is 10 seconds
 
         player_name = request.GET.get('player_name')
         player_email = request.GET.get('player_email')
@@ -19,23 +16,33 @@ def get_question(request):
         if player_name and player_email:
             player, _ = Player.objects.get_or_create(name=player_name, email=player_email)
 
-            # Create or update the Gameplay object for the player
-            gameplay, _ = Gameplay.objects.get_or_create(player=player)
-            gameplay.current_question = None  # Reset the current question
+            game_session, created = GameSession.objects.get_or_create(player=player)
+            if created:
+                game_session.start_time = timezone.now()
 
-            # Set the start time and end time for the question
-            gameplay.question_start_time = timezone.now()
-            gameplay.question_end_time = gameplay.question_start_time + timedelta(seconds=time_limit)
+            if game_session.is_completed():
+                return JsonResponse({'message': 'GameSession completed.'})
 
-            # Save the gameplay object
-            gameplay.save()
+            game_round, _ = GameRound.objects.get_or_create(player=player)
+            game_round.current_question = None
+            game_round.question_start_time = timezone.now()
+
+            time_limit = 10
+            game_round.question_end_time = game_round.question_start_time + timedelta(seconds=time_limit)
+
+            game_round.save()
+
+            # Add the game_round to the game_session
+            game_session.game_rounds.add(game_round)
+
+            # Add the game_session to the results
+            results, _ = Results.objects.get_or_create(game_round=game_round)
 
         question = Question.objects.order_by('?').first()
 
         translation = Translation.objects.filter(question=question, language=language).first()
 
         if not translation:
-            # Translate the question and choices
             translator = Translator(to_lang=language)
             translated_question = translator.translate(question.question_text)
             translated_choices = []
@@ -62,20 +69,21 @@ def get_question(request):
             choice_uuids = [str(choice.uuid) for choice in question.choices.all()]
             translated_correct_answer = str(question.choices.filter(is_correct=True).first().uuid)
 
-        gameplay.current_question = question
-        gameplay.save()
+        game_round.current_question = question
+        game_round.save()
 
         response = {
             'question_uuid': str(question.uuid),
             'question_text': translation.translated_question_text,
             'answer_choices': translation.translated_choices.split(','),
             'choice_uuids': choice_uuids,
-            'correct_answer': translated_correct_answer
+            'correct_answer': translated_correct_answer,
         }
 
         return JsonResponse(response)
 
     return JsonResponse({'error': 'Invalid request method.'}, status=400)
+
 
 @csrf_exempt
 def answer_question(request):
@@ -94,52 +102,34 @@ def answer_question(request):
                 if player_name and player_email:
                     player, _ = Player.objects.get_or_create(name=player_name, email=player_email)
 
-                    gameplay, _ = Gameplay.objects.get_or_create(player=player)
+                    game_round, _ = GameRound.objects.get_or_create(player=player)
 
-                    if gameplay.current_question != question:
+                    if game_round.current_question != question:
                         return JsonResponse({'error': 'Invalid question.'}, status=400)
 
                     current_time = timezone.now()
-                    if current_time > gameplay.question_end_time:
+                    if current_time > game_round.question_end_time:
                         return JsonResponse({'error': 'Time limit exceeded.'}, status=400)
 
-                    time_taken = current_time - gameplay.question_start_time
+                    time_taken = current_time - game_round.question_start_time
 
-                    answer = Answer(player=player, question=question, choice=selected_choice, gameplay=gameplay)
+                    answer = Answer(player=player, question=question, choice=selected_choice, game_round=game_round)
                     answer.save()
 
                     if selected_choice.is_correct:
-                        gameplay.correct_answers += 1
-                        gameplay.save()
+                        game_round.results.correct_answers += 1
+                        game_round.results.save()
                         return JsonResponse({'status': 'success'})
                     else:
-                        gameplay.wrong_answers += 1
-                        gameplay.save()
+                        game_round.results.wrong_answers += 1
+                        game_round.results.save()
                         return JsonResponse({'status': 'failure'})
+
+                    # Update the current_question of the GameRound after answering
+                    game_round.current_question = None
+                    game_round.save()
 
             except (Question.DoesNotExist, Choice.DoesNotExist):
                 return JsonResponse({'error': 'Invalid question or choice.'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method.'}, status=400)
-
-
-def gameplay_results(request, player_id):
-    try:
-        player = Player.objects.get(id=player_id)
-        gameplay = Gameplay.objects.get(player=player)
-        answered_questions = Answer.objects.filter(player=player, gameplay=gameplay).values_list('question', flat=True).distinct()
-
-        questions = Question.objects.filter(id__in=answered_questions)
-
-        context = {
-            'player_name': player.name,
-            'player_email': player.email,
-            'correct_answers': gameplay.correct_answers,
-            'wrong_answers': gameplay.wrong_answers,
-            'answered_questions': questions
-        }
-
-        return render(request, 'results.html', context)
-    except (Player.DoesNotExist, Gameplay.DoesNotExist):
-        return HttpResponse('Player or Gameplay does not exist.')
-
