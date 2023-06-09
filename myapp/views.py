@@ -46,16 +46,15 @@ def get_question(request):
                 if not translation:
                     translator = Translator(to_lang=language)
                     translated_question = translator.translate(question.question_text)
-                    translated_choices = []
-                    choice_uuids = []
+                    translated_choices = [translator.translate(choice.choice_text) for choice in question.choices.all()]
+                    choices = list(question.choices.values('uuid', 'choice_text'))
+                    translated_choices = [choice.choice_text for choice in question.choices.all()]
 
-                    for choice in question.choices.all():
-                        translated_choice = translator.translate(choice.choice_text)
-                        translated_choices.append(translated_choice)
-                        choice_uuids.append(str(choice.uuid))
+
+
 
                     correct_choice = question.choices.filter(is_correct=True).first()
-                    translated_correct_answer = str(correct_choice.uuid)
+                    translated_correct_answer = translated_choices[0] if translated_choices else ''
 
                     translation = Translation(
                         question=question,
@@ -67,8 +66,11 @@ def get_question(request):
                     translation.save()
 
                 else:
-                    choice_uuids = [str(choice.uuid) for choice in question.choices.all()]
-                    translated_correct_answer = str(question.choices.filter(is_correct=True).first().uuid)
+                    choices = list(question.choices.values('uuid', 'choice_text'))
+
+                    translated_choices = translation.translated_choices.split(',')
+                    translated_correct_answer = str(question.choices.filter(is_correct=True).first().uuid) if question.choices.filter(is_correct=True).exists() else ''
+
 
                 # Check if the current game round is completed
                 current_game_round = game_session.game_rounds.last()
@@ -93,11 +95,10 @@ def get_question(request):
                 response = {
                     'question_uuid': str(question.uuid),
                     'question_text': translation.translated_question_text,
-                    'choices': translation.translated_choices.split(','),
+                    'choices': choices,
                     'correct_answer_uuid': translation.translated_correct_answer,
                     'game_round_id': game_round.id,
                     'game_session_id': game_session.id,
-
                 }
 
                 return JsonResponse(response)
@@ -116,60 +117,55 @@ def get_question(request):
 def answer_question(request):
     if request.method == 'POST':
         question_uuid = request.POST.get('question_uuid')
-        answer_text = request.POST.get('answer_text')
-        player_name = request.POST.get('player_name')
-        player_email = request.POST.get('player_email')
+        selected_choice_uuid = request.POST.get('selected_choice_uuid')
+        game_round_id = request.POST.get('game_round_id')
+        game_session_id = request.POST.get('game_session_id')
 
-        if question_uuid and answer_text and player_name and player_email:
-            try:
-                player, _ = Player.objects.get_or_create(name=player_name, email=player_email)
-                question = Question.objects.get(uuid=question_uuid)
-                selected_choice = Choice.objects.get(uuid=UUID(answer_text), question=question)
+        if not question_uuid or not selected_choice_uuid or not game_round_id or not game_session_id:
+            return JsonResponse({'message': 'Invalid request parameters.'})
 
-                game_round = GameRound.objects.filter(player=player, current_question=question).first()
+        try:
+            question = Question.objects.get(uuid=question_uuid)
+            selected_choice = Choice.objects.get(uuid=selected_choice_uuid)
+            game_round = GameRound.objects.get(id=game_round_id)
+            game_session = GameSession.objects.get(id=game_session_id)
 
-                if game_round:
-                    answer = Answer(player=player, question=question, choice=selected_choice, game_round=game_round)
-                    answer.save()
+            if game_round.current_question != question or game_round.player != game_session.player:
+                return JsonResponse({'message': 'Invalid question or game round.'})
 
-                    if selected_choice.is_correct:
-                        game_round.results.correct_answers += 1
-                        game_round.results.save()
-                        is_correct = True
-                    else:
-                        game_round.results.wrong_answers += 1
-                        game_round.results.save()
-                        is_correct = False
-
-                    # Generate Results for the GameRound
-                    results, created = Results.objects.get_or_create(game_round=game_round)
-                    if created:
-                        results.player = player
-                    results.answer = answer
-                    results.is_correct = is_correct
-                    results.save()
-
-                    # Set question_end_time when the player answers their game round question
+            # Check if the player's time for the question has exceeded the limit
+            if game_round.question_start_time and game_round.question_end_time is None:
+                elapsed_time = timezone.now() - game_round.question_start_time
+                time_limit = 20
+                if elapsed_time.total_seconds() > time_limit:
+                    game_round.results.wrong_answers += 1
+                    game_round.results.save()
+                    # Set question_end_time to mark the question as expired
                     game_round.question_end_time = timezone.now()
                     game_round.save()
+                    return JsonResponse({'error': 'Time limit exceeded.'}, status=400)
 
-                    # Update the current_question of the GameRound only if the answer is wrong
-                    if not is_correct:
-                        game_round.current_question = None
-                        game_round.save()
+            # Check if the selected choice matches the correct answer
+            is_correct = selected_choice.is_correct
 
-                    return JsonResponse({'status': 'success'})
 
-                else:
-                    return JsonResponse({'error': 'Invalid game round.'}, status=400)
+            answer = Answer(player=game_round.player, question=question, selected_choice=selected_choice,
+                            is_correct=is_correct)
+            answer.save()
 
-            except Question.DoesNotExist:
-                return JsonResponse({'error': 'Invalid question.'}, status=400)
+            game_round.results.total_answers += 1
 
-            except Choice.DoesNotExist:
-                return JsonResponse({'error': 'Invalid choice.'}, status=400)
+            if is_correct:
+                game_round.results.correct_answers += 1
+            else:
+                game_round.results.wrong_answers += 1
 
-            except (ValueError, TypeError):
-                return JsonResponse({'error': 'Invalid answer format.'}, status=400)
+            game_round.results.save()
 
-    return JsonResponse({'error': 'Invalid request method.'}, status=400)
+            return JsonResponse({'message': 'Answer submitted successfully.'})
+
+        except (Question.DoesNotExist, Choice.DoesNotExist, GameRound.DoesNotExist, GameSession.DoesNotExist):
+            return JsonResponse({'message': 'Invalid question or game round.'})
+
+    else:
+        return JsonResponse({'message': 'Invalid request method.'})

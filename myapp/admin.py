@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import Question, Answer, Choice, Player, GameRound, Results, GameSession
 
-
 class ChoiceInline(admin.TabularInline):
     model = Choice
     fields = ['display_uuid', 'choice_text', 'is_correct']
@@ -29,20 +28,29 @@ class QuestionAdmin(admin.ModelAdmin):
         return queryset
 
 class AnswerAdmin(admin.ModelAdmin):
-    list_display = ('choice', 'get_player_name', 'get_question_text', 'get_game_round')
-
-    def get_player_name(self, obj):
-        return obj.player.name if obj.player else None
+    list_display = ('get_question_text', 'get_player_name', 'get_game_round', 'get_selected_choice_text')
 
     def get_question_text(self, obj):
         return obj.question.question_text if obj.question else None
 
+    def get_player_name(self, obj):
+        return obj.player.name if obj.player else None
+
     def get_game_round(self, obj):
         return obj.game_round
 
-    get_player_name.short_description = 'Player'
+    def get_selected_choice_text(self, obj):
+        return obj.selected_choice.choice_text if obj.selected_choice else None
+
     get_question_text.short_description = 'Question'
+    get_player_name.short_description = 'Player'
     get_game_round.short_description = 'Game Round'
+    get_selected_choice_text.short_description = 'Selected Choice'
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.select_related('selected_choice')  # Add this line
+        return queryset
 
 
 class PlayerAdmin(admin.ModelAdmin):
@@ -60,7 +68,6 @@ class GameSessionAdmin(admin.ModelAdmin):
 
     start_time.short_description = 'Start Time'
     end_time.short_description = 'End Time'
-
 
 class GameRoundAdmin(admin.ModelAdmin):
     list_display = ('get_player_name', 'question_start_time', 'question_end_time')
@@ -83,7 +90,6 @@ class GameRoundAdmin(admin.ModelAdmin):
     get_player_name.short_description = 'Player'
     question_start_time.short_description = 'Question Start Time'
     question_end_time.short_description = 'Question End Time'
-
     def change_view(self, request, object_id, form_url='', extra_context=None):
         game_round = self.get_object(request, object_id)
         current_question = game_round.current_question
@@ -98,7 +104,6 @@ class GameRoundAdmin(admin.ModelAdmin):
 
         return super().change_view(request, object_id, form_url=form_url, extra_context=extra_context)
 
-
 class ResultsAdmin(admin.ModelAdmin):
     list_display = ('game_round', 'correct_answers', 'wrong_answers')
 
@@ -106,7 +111,6 @@ class ResultsAdmin(admin.ModelAdmin):
         return obj.game_round
 
     game_round.short_description = 'Game Round'
-
 
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Answer, AnswerAdmin)
