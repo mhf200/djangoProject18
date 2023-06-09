@@ -62,6 +62,7 @@ class GameRound(models.Model):
         return f"{self.player}'s GameRound"
 
 
+
 class Results(models.Model):
     game_round = models.OneToOneField(GameRound, on_delete=models.CASCADE, related_name='results')
     correct_answers = models.IntegerField(default=0)

@@ -11,11 +11,8 @@ class ChoiceInline(admin.TabularInline):
     def display_uuid(self, obj):
         return str(obj.uuid)
 
-
 class GameRoundInline(admin.StackedInline):
     model = GameRound
-
-
 
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ('question_text', 'get_player_name')
@@ -26,6 +23,10 @@ class QuestionAdmin(admin.ModelAdmin):
 
     get_player_name.short_description = 'Player'
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.prefetch_related('gameround_set')
+        return queryset
 
 class AnswerAdmin(admin.ModelAdmin):
     list_display = ('choice', 'get_player_name', 'get_question_text', 'get_game_round')
@@ -82,6 +83,20 @@ class GameRoundAdmin(admin.ModelAdmin):
     get_player_name.short_description = 'Player'
     question_start_time.short_description = 'Question Start Time'
     question_end_time.short_description = 'Question End Time'
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        game_round = self.get_object(request, object_id)
+        current_question = game_round.current_question
+
+        if current_question:
+            extra_context = extra_context or {}
+            extra_context['current_question'] = {
+                'question_text': current_question.question_text,
+                'question_start_time': game_round.question_start_time,
+                'question_end_time': game_round.question_end_time,
+            }
+
+        return super().change_view(request, object_id, form_url=form_url, extra_context=extra_context)
 
 
 class ResultsAdmin(admin.ModelAdmin):
