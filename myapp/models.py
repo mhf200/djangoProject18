@@ -10,6 +10,8 @@ class Player(models.Model):
 
     def __str__(self):
         return self.name
+
+
 class Question(models.Model):
     uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
     question_text = models.CharField(max_length=200)
@@ -26,6 +28,7 @@ class Question(models.Model):
                 self.correct_answer_uuid = correct_choice.uuid
         super().save(*args, **kwargs)
 
+
 class Choice(models.Model):
     uuid = models.UUIDField(default=uuid4, editable=False, unique=True)
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='choices')
@@ -38,7 +41,6 @@ class Choice(models.Model):
     @property
     def choice_uuid(self):
         return str(self.uuid)
-
 
 
 class Translation(models.Model):
@@ -61,7 +63,7 @@ class GameSession(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='game_sessions')
     start_time = models.DateTimeField(null=True)
     end_time = models.DateTimeField(null=True, default=None)
-    status = models.CharField(max_length=4, choices=STATUS_CHOICES , default='Won')
+    status = models.CharField(max_length=4, choices=STATUS_CHOICES, default='Won')
 
     def __str__(self):
         return f"GameSession for {self.player}"
@@ -94,10 +96,12 @@ class GameRound(models.Model):
     question_end_time = models.DateTimeField(null=True, default=None)
     current_question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True, blank=True)
     time_taken = models.IntegerField(null=True)
-    game_session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='game_rounds',default=None , null=True)
+    game_session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='game_rounds', default=None,
+                                     null=True)
 
     def __str__(self):
         return f"{self.player}'s GameRound"
+
 
 class Answer(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
@@ -109,6 +113,7 @@ class Answer(models.Model):
 
     def __str__(self):
         return f"Answer for {self.question} by {self.player}"
+
 
 class Results(models.Model):
     game_round = models.OneToOneField(GameRound, on_delete=models.CASCADE, related_name='results')

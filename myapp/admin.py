@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import Question, Answer, Choice, Player, GameRound, Results, GameSession
-from django.utils import timezone
 from django.db.models import Sum
+
 
 class ChoiceInline(admin.TabularInline):
     model = Choice
@@ -79,7 +79,6 @@ class GameSessionAdmin(admin.ModelAdmin):
             return 'LOST'
 
     get_status.short_description = 'Status'
-
 
 
 class GameRoundAdmin(admin.ModelAdmin):

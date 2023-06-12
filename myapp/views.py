@@ -7,8 +7,6 @@ import datetime
 from uuid import UUID
 
 
-import random
-
 @csrf_exempt
 def get_question(request):
     if request.method == 'GET':
@@ -115,10 +113,6 @@ def get_question(request):
 
     else:
         return JsonResponse({'message': 'Invalid request method.'})
-
-
-
-
 
 
 @csrf_exempt
