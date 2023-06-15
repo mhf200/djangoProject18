@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Question, Answer, Choice, Player, GameRound, Results, GameSession
+from .models import Question, Answer, Choice, Player, GameRound, GameSession
 from django.db.models import Sum
 
 
@@ -72,7 +72,7 @@ class GameSessionAdmin(admin.ModelAdmin):
         return obj.end_time.strftime('%Y-%m-%d %H:%M:%S') if obj.end_time else None
 
     def get_status(self, obj):
-        correct_answers_count = obj.game_rounds.aggregate(total=Sum('results__correct_answers'))['total']
+        correct_answers_count = obj.game_rounds.aggregate(total=Sum('answers__is_correct'))['total']
         if correct_answers_count == 10:
             return 'WON'
         else:
@@ -118,19 +118,9 @@ class GameRoundAdmin(admin.ModelAdmin):
         return super().change_view(request, object_id, form_url=form_url, extra_context=extra_context)
 
 
-class ResultsAdmin(admin.ModelAdmin):
-    list_display = ('game_round', 'correct_answers', 'wrong_answers', 'not_answered_count')
-
-    def game_round(self, obj):
-        return obj.game_round
-
-    game_round.short_description = 'Game Round'
-
-
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Answer, AnswerAdmin)
 admin.site.register(Choice)
 admin.site.register(Player, PlayerAdmin)
 admin.site.register(GameRound, GameRoundAdmin)
-admin.site.register(Results, ResultsAdmin)
 admin.site.register(GameSession, GameSessionAdmin)

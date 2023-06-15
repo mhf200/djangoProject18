@@ -59,11 +59,14 @@ class GameSession(models.Model):
         ('WON', 'Won'),
         ('LOST', 'Lost'),
     ]
-
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='game_sessions')
     start_time = models.DateTimeField(null=True)
     end_time = models.DateTimeField(null=True, default=None)
     status = models.CharField(max_length=4, choices=STATUS_CHOICES, default='Won')
+    correct_answers = models.IntegerField(default=0)
+    wrong_answers = models.IntegerField(default=0)
+    total_answers = models.IntegerField(default=0)
+    not_answered_count = models.IntegerField(default=0)
 
     def __str__(self):
         return f"GameSession for {self.player}"
@@ -77,8 +80,7 @@ class GameSession(models.Model):
             raise ValidationError("A GameSession cannot have more than 10 GameRounds.")
 
     def calculate_status(self):
-        correct_answers_count = self.game_rounds.first().results.correct_answers
-        if correct_answers_count == 10:
+        if self.correct_answers == 10:
             self.status = 'WON'
         else:
             self.status = 'LOST'
@@ -94,7 +96,7 @@ class GameRound(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='game_rounds')
     question_start_time = models.DateTimeField(null=True)
     question_end_time = models.DateTimeField(null=True, default=None)
-    current_question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True, blank=True)
+    current_question = models.ForeignKey(Question, on_delete=models.CASCADE, null=True)
     time_taken = models.IntegerField(null=True)
     game_session = models.ForeignKey(GameSession, on_delete=models.CASCADE, related_name='game_rounds', default=None,
                                      null=True)
@@ -113,14 +115,3 @@ class Answer(models.Model):
 
     def __str__(self):
         return f"Answer for {self.question} by {self.player}"
-
-
-class Results(models.Model):
-    game_round = models.OneToOneField(GameRound, on_delete=models.CASCADE, related_name='results')
-    correct_answers = models.IntegerField(default=0)
-    wrong_answers = models.IntegerField(default=0)
-    total_answers = models.IntegerField(default=0)
-    not_answered_count = models.IntegerField(default=0)
-
-    def __str__(self):
-        return f"Results for {self.game_round}"

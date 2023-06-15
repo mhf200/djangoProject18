@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block content %}
+<div class="container">
+  <div id="gameplay-container">
+    <h1 id="question"></h1>
+
+    <div id="choices"></div>
+
+    <input type="text" id="player-name" placeholder="Enter your name">
+    <input type="email" id="player-email" placeholder="Enter your email">
+
+    <button id="get-question-btn" class="btn btn-primary">Get Question</button>
+    <button id="submit-answer-btn" class="btn btn-success">Submit Answer</button>
+
+    <div id="timer">Time Remaining: <span id="countdown"></span></div>
+
+
+    <div id="results" style="display: none;">
+  <p id="correct-answers"></p>
+  <p id="wrong-answers"></p>
+  </div>
+</div>
+
+{% block scripts %}
+<script src="{% static 'game/gameplay.js' %}"></script>
+{% endblock %}
+
+{% endblock %}
