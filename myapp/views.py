@@ -160,10 +160,7 @@ def answer_question(request):
                 return JsonResponse(response)
             else:
                 response = {
-                    'message': 'Answer submitted successfully.',
-                    'correct_answers': game_session.correct_answers,
-                    'wrong_answers': game_session.wrong_answers
-                }
+                    'message': 'Answer submitted successfully.',}
 
                 return JsonResponse(response)
 
@@ -171,8 +168,7 @@ def answer_question(request):
             game_round.current_question = None
             game_round.save()
 
-            return JsonResponse({'message': 'Answer submitted successfully.','correct_answers': game_session.correct_answers,
-                    'wrong_answers': game_session.wrong_answers})
+            return JsonResponse({'message': 'Answer submitted successfully.'})
 
         except (Question.DoesNotExist, Choice.DoesNotExist, GameRound.DoesNotExist, GameSession.DoesNotExist):
             return JsonResponse({'message': 'Invalid question or game round.'}, status=400)

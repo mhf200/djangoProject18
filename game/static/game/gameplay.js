@@ -110,7 +110,6 @@ $(document).ready(function() {
 
           $('#question-container').hide();
           $('#results').text('Game session ended! You have submitted 10 answers.');
-
           $('#results').show();
 
         } else {
