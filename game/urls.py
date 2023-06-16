@@ -1,9 +1,15 @@
 from django.urls import path
-from . import views
-from myapp import views
-app_name = 'game'
+from myapp.views import get_question, answer_question
+from game.views import results , gameplay
+
+
 
 urlpatterns = [
-    path('get_question/', views.get_question, name='get_question'),
-    path('answer_question/', views.answer_question, name='answer_question'),
+    path('get_question/', get_question, name='get_question'),
+    path('answer_question/', answer_question, name='answer_question'),
+    path('results/<int:game_session_id>/', results, name='results'),
+    path('gameplay/', gameplay, name='gameplay'),
+
+
+
 ]

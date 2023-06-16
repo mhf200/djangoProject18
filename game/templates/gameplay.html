@@ -3,24 +3,35 @@
 {% load static %}
 
 {% block content %}
+    <body style="background-color: snow">
 <div class="container">
   <div id="gameplay-container">
     <h1 id="question"></h1>
 
     <div id="choices"></div>
 
-    <input type="text" id="player-name" placeholder="Enter your name">
-    <input type="email" id="player-email" placeholder="Enter your email">
+    <div id="player-info" class="form-row">
+      <div class="col-md-6 mb-3">
+        <label for="player-name">Name</label>
+        <input type="text" id="player-name" class="form-control" placeholder="Enter your name">
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="player-email">Email</label>
+        <input type="email" id="player-email" class="form-control" placeholder="Enter your email">
+      </div>
+    </div>
 
-    <button id="get-question-btn" class="btn btn-primary">Get Question</button>
-    <button id="submit-answer-btn" class="btn btn-success">Submit Answer</button>
+    <div class="text-center">
+      <button id="get-question-btn" class="btn btn-primary">Get Question</button>
+      <button id="submit-answer-btn" class="btn btn-success">Submit Answer</button>
+    </div>
 
     <div id="timer">Time Remaining: <span id="countdown"></span></div>
 
-
     <div id="results" style="display: none;">
-  <p id="correct-answers"></p>
-  <p id="wrong-answers"></p>
+      <p id="correct-answers"></p>
+      <p id="wrong-answers"></p>
+    </div>
   </div>
 </div>
 
@@ -29,3 +40,4 @@
 {% endblock %}
 
 {% endblock %}
+</body>

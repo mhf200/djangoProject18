@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <body style="background-color: snow">
+<div class="container" >
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card mt-5">
+        <div class="card-body text-center">
+          <h1 class="mb-4">Congratulations!</h1>
+          <p class="mb-2">Correct Answers: {{ correct_answers }}</p>
+          <p class="mb-2">Wrong Answers: {{ wrong_answers }}</p>
+          <p class="mb-4">Thank you for playing!</p>
+          <a href="/gameplay" class="btn btn-primary">Play Again</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'game/gameplay.js' %}"></script>
+{% endblock %}
+</body>

@@ -31,6 +31,9 @@ $(document).ready(function() {
             $('#question-container').hide();
             $('#results').text('Game session ended.');
             $('#results').show();
+
+
+            redirectToResults();
           } else if (response.message === 'No more questions available.') {
             // Display no more questions available message
             $('#question-container').hide();
@@ -81,7 +84,6 @@ $(document).ready(function() {
 
       if (countdown <= 0) {
         clearInterval(timerInterval);
-
       }
 
       countdownElement.text(countdown);
@@ -89,46 +91,61 @@ $(document).ready(function() {
   }
 
   function submitAnswer() {
-  var selectedChoiceUuid = $('#choices button.selected').attr('data-choice-uuid');
+    var selectedChoiceUuid = $('#choices button.selected').attr('data-choice-uuid');
 
-  if (selectedChoiceUuid) {
-    $.ajax({
-      type: 'POST',
-      url: '/answer_question/',
-      data: {
-        question_uuid: currentQuestion,
-        selected_choice_uuid: selectedChoiceUuid,
-        game_round_id: gameRoundId,
-        game_session_id: gameSessionId
+    if (selectedChoiceUuid) {
+      $.ajax({
+        type: 'POST',
+        url: '/answer_question/',
+        data: {
+          question_uuid: currentQuestion,
+          selected_choice_uuid: selectedChoiceUuid,
+          game_round_id: gameRoundId,
+          game_session_id: gameSessionId
+        },
+        success: function(response) {
+          remainingRounds--;
 
-      },
-      success: function(response) {
+          if (remainingRounds <= 0 || response.message === 'Game session ended.') {
+            $('#question-container').hide();
+            $('#results').text('Game session ended! You have submitted 10 answers.');
+            $('#results').show();
 
-        remainingRounds--;
 
-        if (response.message === 'Game session ended.') {
-
-          $('#question-container').hide();
-          $('#results').text('Game session ended! You have submitted 10 answers.');
-          $('#results').show();
-
-        } else {
-          getQuestion();
+            redirectToResults();
+          } else {
+            getQuestion();
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('Error:', error);
         }
-      },
-      error: function(xhr, status, error) {
-        console.error('Error:', error);
-      }
-    });
-  } else {
-    alert('Please select an answer.');
+      });
+    } else {
+      alert('Please select an answer.');
+    }
   }
-}
 
   $('#choices').on('click', 'button', function() {
     $('#choices button').removeClass('selected');
     $(this).addClass('selected');
   });
+
+  function restartGame() {
+    // Perform any necessary actions to reset the game state
+
+    // Redirect to the gameplay.html page to start a new game session
+    window.location.href = '/gameplay/';
+  }
+
+  // Event handler for the restart button
+  $('#restart-btn').click(function() {
+    restartGame();
+  });
+
+  function redirectToResults() {
+    if (gameSessionId) {
+      window.location.href = '/results/' + gameSessionId + '/';
+    }
+  }
 });
-
-
