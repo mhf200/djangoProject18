@@ -3,6 +3,8 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Question, Answer, Translation, Choice, Player, GameRound, GameSession
 from translate import Translator
 from django.utils import timezone
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
 
 @csrf_exempt
@@ -13,6 +15,11 @@ def get_question(request):
         player_email = request.GET.get('player_email')
 
         if player_name and player_email:
+            try:
+                validate_email(player_email)
+            except ValidationError:
+                return JsonResponse({'message': 'Invalid email.'})
+
             player, _ = Player.objects.get_or_create(name=player_name, email=player_email)
 
             latest_game_session = GameSession.objects.filter(player=player).order_by('-start_time').first()
@@ -113,17 +120,16 @@ def answer_question(request):
 
             if game_round.question_start_time and game_round.question_end_time is None:
                 elapsed_time = timezone.now() - game_round.question_start_time
-                time_limit = 40
+                time_limit = 10
                 if elapsed_time.total_seconds() > time_limit:
                     game_session.not_answered_count += 1
                     game_session.save()
 
                     game_round.question_end_time = timezone.now()
                     game_round.save()
-                    return JsonResponse({'error': 'Time limit exceeded.'}, status=400)
 
-            if selected_choice.question != question:
-                return JsonResponse({'message': 'Invalid answer.'}, status=400)
+                    # Fetch the next question
+                    return get_question(request)
 
             is_correct = selected_choice.is_correct
 
@@ -156,19 +162,10 @@ def answer_question(request):
                     'wrong_answers': game_session.wrong_answers
                 }
 
-
                 return JsonResponse(response)
             else:
-                response = {
-                    'message': 'Answer submitted successfully.',}
-
-                return JsonResponse(response)
-
-
-            game_round.current_question = None
-            game_round.save()
-
-            return JsonResponse({'message': 'Answer submitted successfully.'})
+                # Fetch the next question
+                return get_question(request)
 
         except (Question.DoesNotExist, Choice.DoesNotExist, GameRound.DoesNotExist, GameSession.DoesNotExist):
             return JsonResponse({'message': 'Invalid question or game round.'}, status=400)
