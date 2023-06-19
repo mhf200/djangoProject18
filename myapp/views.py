@@ -32,6 +32,8 @@ def get_question(request):
             game_session = latest_game_session or GameSession(player=player, start_time=timezone.now())
             game_session.save()
 
+
+
             previous_question_uuids = Answer.objects.filter(player=player).values_list('question_id', flat=True)
 
             questions = Question.objects.exclude(id__in=previous_question_uuids)
@@ -67,6 +69,7 @@ def get_question(request):
                 if current_game_round and current_game_round.question_end_time is None:
                     current_game_round.question_end_time = timezone.now()
                     current_game_round.save()
+
 
                 if not current_game_round or current_game_round.question_end_time is not None:
                     game_round = GameRound(player=player, question_start_time=timezone.now())
@@ -120,7 +123,7 @@ def answer_question(request):
 
             if game_round.question_start_time and game_round.question_end_time is None:
                 elapsed_time = timezone.now() - game_round.question_start_time
-                time_limit = 10
+                time_limit = 40
                 if elapsed_time.total_seconds() > time_limit:
                     game_session.not_answered_count += 1
                     game_session.save()
@@ -164,8 +167,12 @@ def answer_question(request):
 
                 return JsonResponse(response)
             else:
+                response = {
+                    'message': 'ANswer submitted !',
+
+                }
                 # Fetch the next question
-                return get_question(request)
+                return JsonResponse(response)
 
         except (Question.DoesNotExist, Choice.DoesNotExist, GameRound.DoesNotExist, GameSession.DoesNotExist):
             return JsonResponse({'message': 'Invalid question or game round.'}, status=400)
