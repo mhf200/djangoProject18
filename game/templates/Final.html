@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Session Results</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 20px;
+            background-color: snow;
+        }
+        h1, h2, h3 {
+            margin-top: 20px;
+        }
+        .game-session-table {
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: lightgray;
+        }
+        .questions-table {
+            width: 100%;
+            margin-bottom: 20px;
+            background-color: aliceblue;
+        }
+        .game-session-table th,
+        .game-session-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .questions-table th,
+        .questions-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center">Game Session Results</h1>
+
+        <table class="game-session-table">
+            <tr>
+                <th>Game Session ID</th>
+                <td>{{ game_session_id }}</td>
+            </tr>
+            <tr>
+                <th>Player</th>
+                <td>{{ player_name }}</td>
+            </tr>
+            <tr>
+                <th>Start Time</th>
+                <td>{{ start_time }}</td>
+            </tr>
+            <tr>
+                <th>End Time</th>
+                <td>{{ end_time }}</td>
+            </tr>
+            <tr>
+                <th>Status</th>
+                <td>{{ status }}</td>
+            </tr>
+            <tr>
+                <th>Correct Answers</th>
+                <td>{{ correct_answers }}</td>
+            </tr>
+            <tr>
+                <th>Wrong Answers</th>
+                <td>{{ wrong_answers }}</td>
+            </tr>
+            <tr>
+                <th>Time Taken</th>
+                <td>{% if time_taken %}{{ time_taken }} seconds{% else %}Not available{% endif %}</td>
+            </tr>
+        </table>
+
+        <table class="questions-table">
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Answer</th>
+                    <th>Correct Answer</th>
+                    <th>Time Taken</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for question in questions %}
+                <tr>
+                    <td>{{ question.question.question_text }}</td>
+                    <td>{% if question.player_answer %}{{ question.player_answer }}{% else %}Not answered{% endif %}</td>
+                    <td>{{ question.correct_answer.choice_text }}</td>
+                    <td>{{ question.time_taken }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

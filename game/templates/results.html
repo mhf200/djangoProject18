@@ -13,11 +13,14 @@
           <p class="mb-2">Wrong Answers: {{ wrong_answers }}</p>
           <p class="mb-4">Thank you for playing!</p>
           <a href="/gameplay" class="btn btn-primary">Play Again</a>
+            <a href="{% url 'final_results' game_session_id %}" class="btn btn-danger">Results</a>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+
 
 <script src="{% static 'game/js/gameplay.js' %}"></script>
 {% endblock %}

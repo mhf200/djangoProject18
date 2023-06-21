@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 
 @csrf_exempt
 def get_question(request):
+
     if request.method == 'GET':
         language = request.GET.get('language')
         player_name = request.GET.get('player_name')
@@ -27,7 +28,7 @@ def get_question(request):
             if latest_game_session and latest_game_session.total_answers >= 10:
                 latest_game_session.end_time = timezone.now()
                 latest_game_session.save()
-                latest_game_session = None  # Reset the latest_game_session to None to start a new game session
+                latest_game_session = None  # Reset
 
             game_session = latest_game_session or GameSession(player=player, start_time=timezone.now())
             game_session.save()
@@ -131,7 +132,7 @@ def answer_question(request):
                     game_round.question_end_time = timezone.now()
                     game_round.save()
 
-                    # Fetch the next question
+
                     return get_question(request)
 
             is_correct = selected_choice.is_correct
@@ -149,7 +150,7 @@ def answer_question(request):
 
             game_session.save()
 
-            # Calculate and update the time_taken field in GameRound
+
             if game_round.question_start_time:
                 elapsed_time = timezone.now() - game_round.question_start_time
                 game_round.time_taken = elapsed_time.total_seconds()
@@ -157,21 +158,23 @@ def answer_question(request):
 
             if game_session.total_answers >= 10:
                 game_session.end_time = timezone.now()
+                game_session.calculate_status()
                 game_session.save()
 
                 response = {
                     'message': 'Game session ended.',
                     'correct_answers': game_session.correct_answers,
-                    'wrong_answers': game_session.wrong_answers
+                    'wrong_answers': game_session.wrong_answers,
+                    'game_session_status': game_session.status
                 }
 
                 return JsonResponse(response)
             else:
                 response = {
-                    'message': 'ANswer submitted !',
-
+                    'message': 'Answer submitted!',
+                    'game_session_status': None
                 }
-                # Fetch the next question
+
                 return JsonResponse(response)
 
         except (Question.DoesNotExist, Choice.DoesNotExist, GameRound.DoesNotExist, GameSession.DoesNotExist):

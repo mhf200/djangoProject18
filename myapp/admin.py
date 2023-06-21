@@ -72,13 +72,14 @@ class GameSessionAdmin(admin.ModelAdmin):
         return obj.end_time.strftime('%Y-%m-%d %H:%M:%S') if obj.end_time else None
 
     def get_status(self, obj):
-        correct_answers_count = obj.game_rounds.aggregate(total=Sum('answers__is_correct'))['total']
-        if correct_answers_count == 10:
-            return 'WON'
+        if obj.status:
+            return obj.get_status_display()  # Use the display value of the status field
         else:
-            return 'LOST'
-
-    get_status.short_description = 'Status'
+            correct_answers_count = obj.game_rounds.aggregate(total=Sum('answers__is_correct'))['total']
+            if correct_answers_count == 10:
+                return 'WON'
+            else:
+                return 'LOST'
 
 
 class GameRoundAdmin(admin.ModelAdmin):

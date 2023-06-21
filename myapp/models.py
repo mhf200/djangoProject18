@@ -62,7 +62,7 @@ class GameSession(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='game_sessions')
     start_time = models.DateTimeField(null=True)
     end_time = models.DateTimeField(null=True, default=None)
-    status = models.CharField(max_length=4, choices=STATUS_CHOICES, default='Won')
+    status = models.CharField(max_length=4, choices=STATUS_CHOICES, default='WON')
     correct_answers = models.IntegerField(default=0)
     wrong_answers = models.IntegerField(default=0)
     total_answers = models.IntegerField(default=0)
@@ -84,6 +84,7 @@ class GameSession(models.Model):
             self.status = 'WON'
         else:
             self.status = 'LOST'
+
 
     def save(self, *args, **kwargs):
         if self.is_completed() and not self.end_time and not self.status:
