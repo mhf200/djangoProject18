@@ -1,8 +1,14 @@
 {% extends 'base.html' %}
 
 {% load static %}
-
+<link rel="stylesheet" href="{% static 'game/css/styles.css' %}">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 {% block content %}
+     <head>
+
+
+    </head>
     <body style="background-color: snow">
 <div class="container">
   <div id="gameplay-container">
@@ -23,7 +29,6 @@
 
     <div class="text-center">
       <button id="get-question-btn" class="btn btn-primary">Get Question</button>
-      <button id="submit-answer-btn" class="btn btn-success">Submit Answer</button>
     </div>
 
     <div id="timer">Time Remaining: <span id="countdown"></span></div>
@@ -36,6 +41,7 @@
 </div>
 
 {% block scripts %}
+
 <script src="{% static 'game/js/gameplay.js' %}"></script>
 {% endblock %}
 

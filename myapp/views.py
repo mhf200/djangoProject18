@@ -132,7 +132,6 @@ def answer_question(request):
                     game_round.question_end_time = timezone.now()
                     game_round.save()
 
-
                     return get_question(request)
 
             is_correct = selected_choice.is_correct
@@ -149,7 +148,6 @@ def answer_question(request):
                 game_session.wrong_answers += 1
 
             game_session.save()
-
 
             if game_round.question_start_time:
                 elapsed_time = timezone.now() - game_round.question_start_time
@@ -172,6 +170,7 @@ def answer_question(request):
             else:
                 response = {
                     'message': 'Answer submitted!',
+                    'is_correct': is_correct,  # Include the 'is_correct' property in the response
                     'game_session_status': None
                 }
 
@@ -182,3 +181,4 @@ def answer_question(request):
 
     else:
         return JsonResponse({'message': 'Invalid request method.'}, status=400)
+

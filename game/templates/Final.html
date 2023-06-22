@@ -87,7 +87,7 @@
                 {% for question in questions %}
                 <tr>
                     <td>{{ question.question.question_text }}</td>
-                    <td>{% if question.player_answer %}{{ question.player_answer }}{% else %}Not answered{% endif %}</td>
+                    <td>{{ question.player_answer }}</td>
                     <td>{{ question.correct_answer.choice_text }}</td>
                     <td>{{ question.time_taken }}</td>
                 </tr>
